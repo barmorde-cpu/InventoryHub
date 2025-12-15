@@ -1,0 +1,73 @@
+@page "/fetchproducts"
+@inject HttpClient Http
+
+<h3>InventoryHub Product List</h3>
+
+@if (errorMessage != null)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+else if (products == null)
+{
+    <p><em>Loading products from API...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Stock</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var product in products)
+            {
+                <tr>
+                    <td>@product.Name</td>
+                    <td>@product.Category?.Name</td> <!-- Nested JSON Access -->
+                    <td>$@product.Price</td>
+                    <td>@product.Stock</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private Product[]? products;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // INTEGRATION: Fetching data from the Minimal API
+            // OPTIMIZATION: In a larger app, we would cache this in a State Container
+            products = await Http.GetFromJsonAsync<Product[]>("/api/products");
+        }
+        catch (Exception ex)
+        {
+            // DEBUGGING: Error handling for connection issues
+            errorMessage = $"Error loading products: {ex.Message}. Make sure ServerApp is running.";
+        }
+    }
+
+    // JSON STRUCTURE: Classes matching the API response
+    public class Product
+    {
+        public int Id { get; set; }
+        public string? Name { get; set; }
+        public double Price { get; set; }
+        public int Stock { get; set; }
+        public Category? Category { get; set; } // Nested Object
+    }
+
+    public class Category
+    {
+        public int Id { get; set; }
+        public string? Name { get; set; }
+    }
+}
